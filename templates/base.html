@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LYFJSHS Lost and Found System{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="nav-brand">
+                <a href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="Lost & Found Logo" class="logo-img">
+                    <span class="brand-text">Lost & Found</span>
+                </a>
+            </div>
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="{{ url_for('index') }}">Home</a></li>
+                <li><a href="{{ url_for('lost_items') }}">Lost Items</a></li>
+                <li><a href="{{ url_for('found_items') }}">Found Items</a></li>
+                <li><a href="{{ url_for('reports') }}"><i class="bi bi-bar-chart-fill"></i> Reports</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('report_lost') }}">Report Lost</a></li>
+                    <li><a href="{{ url_for('report_found') }}">Report Found</a></li>
+                    <li><a href="{{ url_for('my_items') }}">My Items</a></li>
+                    <li class="nav-bell">
+                        <a href="{{ url_for('messages') }}" title="Messages & Notifications">
+                            <i class="bi bi-bell-fill bell-icon"></i>
+                            <span class="unread-badge" id="notificationBadge" style="display: none;">0</span>
+                        </a>
+                    </li>
+                    <li><a href="{{ url_for('logout') }}" class="btn-logout">Logout ({{ current_user.username }})</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}" class="btn-login">Login</a></li>
+                    <li><a href="{{ url_for('register') }}" class="btn-register">Register</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}">
+                                {{ message|safe }}
+                                <span class="flash-close" onclick="this.parentElement.remove()">&times;</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+<!-- start webpushr code --> <script>(function(w,d, s, id) {if(typeof(w.webpushr)!=='undefined') return;w.webpushr=w.webpushr||function(){(w.webpushr.q=w.webpushr.q||[]).push(arguments)};var js, fjs = d.getElementsByTagName(s)[0];js = d.createElement(s); js.id = id;js.async=1;js.src = "https://cdn.webpushr.com/app.min.js";fjs.parentNode.appendChild(js);}(window,document, 'script', 'webpushr-jssdk'));webpushr('setup',{'key':'BAZYh_PcmMgE-9rs_hlZWn9uDl-5xNin6ZH3I_Dz4440RcSZjRxeHfYTWpRpeFfBGhNGzx7nbrhLrBWeK-99aLA', 'sw':'/webpushr-sw.js' });</script><!-- end webpushr code -->
+<script>
+    // Hamburger menu toggle
+    document.getElementById('hamburger').addEventListener('click', function() {
+        const navMenu = document.getElementById('navMenu');
+        this.classList.toggle('active');
+        navMenu.classList.toggle('active');
+    });
+    
+    // Close menu when clicking on a link
+    document.querySelectorAll('.nav-menu a').forEach(link => {
+        link.addEventListener('click', function() {
+            document.getElementById('hamburger').classList.remove('active');
+            document.getElementById('navMenu').classList.remove('active');
+        });
+    });
+
+    // Update notification count (unread messages + matched items)
+    function updateNotificationCount() {
+        const badge = document.getElementById('notificationBadge');
+        if (!badge) return;
+
+        fetch('{{ url_for("unread_count") }}')
+            .then(response => response.json())
+            .then(data => {
+                const totalNotifications = data.total_notifications || 0;
+                if (totalNotifications > 0) {
+                    badge.textContent = totalNotifications > 99 ? '99+' : totalNotifications;
+                    badge.style.display = 'inline-flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            })
+            .catch(error => console.error('Error fetching notification count:', error));
+    }
+
+    // Load notification count on page load
+    document.addEventListener('DOMContentLoaded', updateNotificationCount);
+
+    // Update notification count every 30 seconds
+    setInterval(updateNotificationCount, 30000);
+</script>
+</body>
+</html>
+

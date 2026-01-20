@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Messages - Lost and Found System{% endblock %}
+
+{% block content %}
+<div class="messages-container">
+    <div class="messages-header">
+        <h1>Messages</h1>
+        <p class="messages-subtitle">Your conversations</p>
+    </div>
+    
+    {% if conversations %}
+        <div class="messages-list">
+            {% for user_id, conv_data in conversations.items() %}
+                <a href="{{ url_for('conversation', user_id=user_id) }}" class="message-item {% if conv_data.unread_count > 0 %}unread{% endif %}">
+                    <div class="message-item-avatar">
+                        <span class="avatar-initial">{{ conv_data.sender.username[0].upper() }}</span>
+                    </div>
+                    <div class="message-item-content">
+                        <div class="message-item-header">
+                            <h3 class="message-item-name">{{ conv_data.sender.username }}</h3>
+                            <span class="message-item-time">{{ conv_data.last_message.created_at.strftime('%I:%M %p') }}</span>
+                        </div>
+                        <p class="message-item-preview">
+                            {% if conv_data.unread_count > 0 %}<strong>{% endif %}
+                            {{ conv_data.last_message.content[:60] }}{% if conv_data.last_message.content|length > 60 %}...{% endif %}
+                            {% if conv_data.unread_count > 0 %}</strong>{% endif %}
+                        </p>
+                    </div>
+                    {% if conv_data.unread_count > 0 %}
+                        <div class="unread-badge">{{ conv_data.unread_count }}</div>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-messages-container">
+            <div class="no-messages-icon">💬</div>
+            <h2>No messages yet</h2>
+            <p>Start a conversation by viewing lost or found items</p>
+            <a href="{{ url_for('lost_items') }}" class="btn btn-primary" style="margin-top: 1rem;">Browse Items</a>
+        </div>
+    {% endif %}
+</div>
+
+{% if all_matches %}
+<div class="matches-notifications-container">
+    <div class="matches-notifications-header">
+        <h2><i class="bi bi-lightbulb-fill"></i> Item Matches Found</h2>
+        <p>We found potential matches for your items!</p>
+    </div>
+    
+    <div class="matches-notifications-list">
+        {% for match_group in all_matches %}
+        <div class="match-notification-card">
+            <div class="match-notification-header">
+                <div class="match-notification-info">
+                    <h3>Your {{ match_group.item_type }} Item</h3>
+                    <p class="match-notification-title">{{ match_group.your_item.title }}</p>
+                </div>
+                <a href="{{ url_for('lost_item_detail' if match_group.item_type == 'lost' else 'found_item_detail', item_id=match_group.your_item.id) }}" class="btn btn-sm btn-secondary">View</a>
+            </div>
+            
+            <div class="matching-items">
+                {% for match in match_group.matches %}
+                <div class="single-match">
+                    <div class="match-score-badge">{{ (match.similarity_score * 100)|int }}%</div>
+                    <div class="match-content">
+                        <h4>{{ match.item.title }}</h4>
+                        <p class="match-user">By <strong>{{ match.item.user.username }}</strong></p>
+                        <p class="match-location"><i class="bi bi-geo-alt"></i> {{ match.item.location }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<style>
+.messages-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.messages-header {
+    margin-bottom: 2rem;
+}
+
+.messages-header h1 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 2rem;
+}
+
+.messages-subtitle {
+    margin: 0.5rem 0 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.messages-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.message-item {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-radius: 12px;
+    background: var(--card-bg);
+    border: 1px solid transparent;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    align-items: center;
+}
+
+.message-item:hover {
+    background: #f5f5f5;
+}
+
+.message-item.unread {
+    background: linear-gradient(90deg, rgba(52, 152, 219, 0.05), transparent);
+}
+
+.message-item.unread:hover {
+    background: rgba(52, 152, 219, 0.1);
+}
+
+.message-item-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    font-weight: 700;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.avatar-initial {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.message-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+}
+
+.message-item-name {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.message-item-time {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    white-space: nowrap;
+    margin-left: 1rem;
+}
+
+.message-item-preview {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.unread-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* No Messages */
+.no-messages-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.no-messages-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.no-messages-container h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+}
+
+.no-messages-container p {
+    margin: 0.5rem 0 0;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .messages-container {
+        padding: 0.75rem;
+    }
+
+    .messages-header h1 {
+        font-size: 1.75rem;
+    }
+
+    .message-item {
+        padding: 0.5rem;
+        gap: 0.75rem;
+    }
+
+    .message-item-avatar {
+        width: 48px;
+        height: 48px;
+        font-size: 1rem;
+    }
+
+    .message-item-name {
+        font-size: 0.95rem;
+    }
+
+    .message-item-preview {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .messages-container {
+        padding: 0;
+    }
+
+    .messages-list {
+        gap: 0.5rem;
+    }
+
+    .message-item {
+        padding: 0.75rem;
+        border-radius: 0;
+    }
+
+    .message-item-avatar {
+        width: 44px;
+        height: 44px;
+    }
+
+    .message-item-time {
+        font-size: 0.75rem;
+    }
+
+    .no-messages-container {
+        padding: 2rem 1rem;
+    }
+}
+
+/* Matching Items Notifications */
+.matches-notifications-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.matches-notifications-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, var(--secondary-color), #16a085);
+    color: white;
+    border-radius: 12px;
+}
+
+.matches-notifications-header i {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.matches-notifications-header h2 {
+    margin: 0.5rem 0;
+    font-size: 1.5rem;
+}
+
+.matches-notifications-header p {
+    margin: 0.5rem 0 0 0;
+    opacity: 0.95;
+}
+
+.matches-notifications-list {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.match-notification-card {
+    background: var(--card-bg);
+    border: 2px solid var(--secondary-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+}
+
+.match-notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.match-notification-info h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+.match-notification-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.matching-items {
+    display: grid;
+    gap: 1rem;
+}
+
+.single-match {
+    background: #fafafa;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.single-match:hover {
+    border-color: var(--secondary-color);
+    box-shadow: 0 4px 12px rgba(26, 188, 156, 0.15);
+}
+
+.match-score-badge {
+    background: var(--secondary-color);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    min-width: 50px;
+    text-align: center;
+    height: fit-content;
+}
+
+.match-content {
+    flex: 1;
+}
+
+.match-content h4 {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+}
+
+.match-user {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.match-location {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.btn-xs {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+    .match-notification-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .match-notification-info {
+        width: 100%;
+    }
+
+    .single-match {
+        flex-direction: column;
+    }
+
+    .match-score-badge {
+        min-width: auto;
+        align-self: flex-start;
+    }
+
+    .matches-notifications-header {
+        margin: 1.5rem 0;
+    }
+}
+</style>
+{% endblock %}

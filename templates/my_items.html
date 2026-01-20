@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}My Items - Lost and Found System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My Items</h1>
+</div>
+
+<div class="my-items-container">
+    <div class="items-section">
+        <h2>My Lost Items</h2>
+        {% if lost_items %}
+            <div class="items-grid">
+                {% for item in lost_items %}
+                    <div class="item-card">
+                        <div class="item-header">
+                            <h3>{{ item.title }}</h3>
+                            <span class="item-status status-{{ item.status }}">{{ item.status|title }}</span>
+                        </div>
+                        <p class="item-description">{{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}</p>
+                        <div class="item-details">
+                            <p><strong>Location:</strong> {{ item.location }}</p>
+                            <p><strong>Date Lost:</strong> {{ item.date_lost.strftime('%B %d, %Y') }}</p>
+                        </div>
+                        <div class="item-actions">
+                            <a href="{{ url_for('lost_item_detail', item_id=item.id) }}" class="btn btn-sm">View</a>
+                            {% if item.status == 'lost' %}
+                                <a href="{{ url_for('update_status', item_type='lost', item_id=item.id, status='found') }}" class="btn btn-sm btn-success">Mark as Found</a>
+                                <a href="{{ url_for('update_status', item_type='lost', item_id=item.id, status='closed') }}" class="btn btn-sm btn-secondary">Close</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-items">You haven't reported any lost items yet.</p>
+        {% endif %}
+    </div>
+
+    <div class="items-section">
+        <h2>My Found Items</h2>
+        {% if found_items %}
+            <div class="items-grid">
+                {% for item in found_items %}
+                    <div class="item-card">
+                        <div class="item-header">
+                            <h3>{{ item.title }}</h3>
+                            <span class="item-status status-{{ item.status }}">{{ item.status|title }}</span>
+                        </div>
+                        <p class="item-description">{{ item.description[:100] }}{% if item.description|length > 100 %}...{% endif %}</p>
+                        <div class="item-details">
+                            <p><strong>Location:</strong> {{ item.location }}</p>
+                            <p><strong>Date Found:</strong> {{ item.date_found.strftime('%B %d, %Y') }}</p>
+                        </div>
+                        <div class="item-actions">
+                            <a href="{{ url_for('found_item_detail', item_id=item.id) }}" class="btn btn-sm">View</a>
+                            {% if item.status == 'found' %}
+                                <a href="{{ url_for('update_status', item_type='found', item_id=item.id, status='claimed') }}" class="btn btn-sm btn-success">Mark as Claimed</a>
+                                <a href="{{ url_for('update_status', item_type='found', item_id=item.id, status='closed') }}" class="btn btn-sm btn-secondary">Close</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-items">You haven't reported any found items yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

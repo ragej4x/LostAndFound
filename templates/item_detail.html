@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.title }} - Lost and Found System{% endblock %}
+
+{% block content %}
+<div class="item-detail-container">
+    <div class="item-detail-card">
+        <div class="item-detail-header">
+            <h1>{{ item.title }}</h1>
+            <span class="item-status status-{{ item_type }}">{{ item.status|title }}</span>
+        </div>
+        
+        <div class="item-detail-body">
+            {% if item.picture %}
+            <div class="detail-section">
+                <h3>Picture</h3>
+                <div class="item-picture-container">
+                    <img src="{{ url_for('static', filename='uploads/' + item.picture) }}" alt="{{ item.title }}" class="item-picture">
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="detail-section">
+                <h3>Description</h3>
+                <p>{{ item.description }}</p>
+            </div>
+            
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <strong>Location:</strong>
+                    <p>{{ item.location }}</p>
+                </div>
+                
+                {% if item_type == 'lost' %}
+                    <div class="detail-item">
+                        <strong>Date Lost:</strong>
+                        <p>{{ item.date_lost.strftime('%B %d, %Y') }}</p>
+                    </div>
+                {% else %}
+                    <div class="detail-item">
+                        <strong>Date Found:</strong>
+                        <p>{{ item.date_found.strftime('%B %d, %Y') }}</p>
+                    </div>
+                {% endif %}
+                
+                <div class="detail-item">
+                    <strong>Contact Information:</strong>
+                    <p>{{ item.contact_info }}</p>
+                </div>
+                
+                {% if item.adviser_name %}
+                <div class="detail-item">
+                    <strong>Adviser Name:</strong>
+                    <p>{{ item.adviser_name }}</p>
+                </div>
+                {% endif %}
+                
+                <div class="detail-item">
+                    <strong>Reported by:</strong>
+                    <p>{{ item.user.username }}</p>
+                </div>
+                
+                <div class="detail-item">
+                    <strong>Reported on:</strong>
+                    <p>{{ item.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="item-detail-footer">
+            <a href="{{ url_for('lost_items' if item_type == 'lost' else 'found_items') }}" class="btn btn-secondary">Back to List</a>
+            {% if current_user.is_authenticated and current_user.id != item.user_id %}
+            <a href="{{ url_for('conversation', user_id=item.user_id) }}" class="btn btn-primary btn-lg">Send Message</a>
+            {% elif not current_user.is_authenticated %}
+            <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">Login to Message</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if matches %}
+    <div class="matches-section">
+        <div class="matches-card">
+            <div class="matches-header">
+                <i class="bi bi-lightbulb-fill"></i>
+                <h2>It looks like we found a match!</h2>
+                <p>{% if item_type == 'lost' %}
+                    These found items might be yours
+                {% else %}
+                    These lost items might match what you found
+                {% endif %}</p>
+            </div>
+            
+            <div class="matches-list">
+                {% for match in matches %}
+                <div class="match-item">
+                    <div class="match-header">
+                        <h3>{{ match.item.title }}</h3>
+                        <span class="match-score">{{ (match.similarity_score * 100)|int }}% Match</span>
+                    </div>
+                    
+                    {% if match.item.picture %}
+                    <img src="{{ url_for('static', filename='uploads/' + match.item.picture) }}" alt="{{ match.item.title }}" class="match-picture">
+                    {% endif %}
+                    
+                    <p class="match-description">{{ match.item.description[:150] }}{% if match.item.description|length > 150 %}...{% endif %}</p>
+                    
+                    <div class="match-details">
+                        <div class="match-detail">
+                            <strong>Location:</strong>
+                            <span>{{ match.item.location }}</span>
+                        </div>
+                        <div class="match-detail">
+                            <strong>Reported by:</strong>
+                            <span>{{ match.item.user.username }}</span>
+                        </div>
+                        {% if match.item_type == 'lost' %}
+                        <div class="match-detail">
+                            <strong>Date Lost:</strong>
+                            <span>{{ match.item.date_lost.strftime('%B %d, %Y') }}</span>
+                        </div>
+                        {% else %}
+                        <div class="match-detail">
+                            <strong>Date Found:</strong>
+                            <span>{{ match.item.date_found.strftime('%B %d, %Y') }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <a href="{{ url_for('lost_item_detail' if match.item_type == 'lost' else 'found_item_detail', item_id=match.item.id) }}" class="btn btn-primary btn-sm">View Details</a>
+                    
+                    {% if current_user.is_authenticated and current_user.id != match.item.user_id %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.is_authenticated and current_user.id != item.user_id %}
+    <div class="message-section">
+        <p>Connect with {{ item.user.username }} to discuss this {{ item_type }} item</p>
+        
+    </div>
+    {% elif current_user.is_authenticated and current_user.id == item.user_id %}
+    <div class="message-section info-box">
+        <p>This is your posted item. You cannot send a message to yourself.</p>
+    </div>
+    {% else %}
+    <div class="message-section info-box">
+        <p><a href="{{ url_for('login') }}">Login</a> to send a message to {{ item.user.username }} about this item.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

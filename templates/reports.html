@@ -1,0 +1,507 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Statistics - Lost and Found System{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    <div class="reports-header">
+        <h1>System Statistics & Reports</h1>
+        <p class="reports-subtitle">Overview of Lost and Found activities</p>
+        <button class="print-btn" onclick="window.print()">
+            <i class="bi bi-printer"></i> Print Report
+        </button>
+    </div>
+
+    <!-- Key Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon users-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="stat-content">
+                <h3>Total Users</h3>
+                <p class="stat-number">{{ stats.total_users }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon lost-icon"><i class="bi bi-search"></i></div>
+            <div class="stat-content">
+                <h3>Lost Items</h3>
+                <p class="stat-number">{{ stats.total_lost_items }}</p>
+                <span class="stat-subtitle">{{ stats.active_lost }} Active</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon found-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="stat-content">
+                <h3>Found Items</h3>
+                <p class="stat-number">{{ stats.total_found_items }}</p>
+                <span class="stat-subtitle">{{ stats.active_found }} Active</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon messages-icon"><i class="bi bi-chat-dots-fill"></i></div>
+            <div class="stat-content">
+                <h3>Total Messages</h3>
+                <p class="stat-number">{{ stats.total_messages }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Statistics -->
+    <div class="detailed-stats">
+        <div class="stats-row">
+            <div class="stats-box">
+                <h3>Lost Items Status</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Active (Still Lost)</span>
+                    <span class="stat-value active">{{ stats.active_lost }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Found & Returned</span>
+                    <span class="stat-value success">{{ stats.items_found }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Closed</span>
+                    <span class="stat-value">{{ stats.closed_lost }}</span>
+                </div>
+            </div>
+
+            <div class="stats-box">
+                <h3>Found Items Status</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Active (Waiting for Owner)</span>
+                    <span class="stat-value active">{{ stats.active_found }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Claimed by Owner</span>
+                    <span class="stat-value success">{{ stats.items_claimed }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Closed</span>
+                    <span class="stat-value">{{ stats.closed_found }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Items -->
+    <div class="recent-section">
+        <div class="recent-row">
+            <div class="recent-box">
+                <h3>Recently Lost Items</h3>
+                {% if stats.recent_lost %}
+                    <div class="recent-list">
+                        {% for item in stats.recent_lost %}
+                        <div class="recent-item">
+                            <div class="recent-icon"><i class="bi bi-search"></i></div>
+                            <div class="recent-info">
+                                <p class="recent-title">{{ item.title }}</p>
+                                <p class="recent-date">{{ item.created_at.strftime('%b %d, %Y') }}</p>
+                                <p class="recent-location"><i class="bi bi-geo-alt"></i> {{ item.location }}</p>
+                            </div>
+                            <span class="recent-status status-{{ item.status }}">{{ item.status|title }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="no-data">No lost items reported yet</p>
+                {% endif %}
+            </div>
+
+            <div class="recent-box">
+                <h3>Recently Found Items</h3>
+                {% if stats.recent_found %}
+                    <div class="recent-list">
+                        {% for item in stats.recent_found %}
+                        <div class="recent-item">
+                            <div class="recent-icon"><i class="bi bi-check-circle-fill"></i></div>
+                            <div class="recent-info">
+                                <p class="recent-title">{{ item.title }}</p>
+                                <p class="recent-date">{{ item.created_at.strftime('%b %d, %Y') }}</p>
+                                <p class="recent-location"><i class="bi bi-geo-alt"></i> {{ item.location }}</p>
+                            </div>
+                            <span class="recent-status status-{{ item.status }}">{{ item.status|title }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="no-data">No found items reported yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- About Section -->
+    <div class="about-section">
+        <h2>About This System</h2>
+        <p>The Lost and Found system helps users report and find lost or found items within the community. Users can post items, search for matches, and communicate with others to reunite items with their owners.</p>
+    </div>
+</div>
+
+<style>
+.reports-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+}
+
+.reports-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.reports-header h1 {
+    font-size: 2.5rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.reports-subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+.print-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.print-btn:hover {
+    background: #2980b9;
+    transform: scale(1.05);
+}
+
+.print-btn:active {
+    transform: scale(0.98);
+}
+
+/* Statistics Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: white;
+}
+
+.users-icon {
+    background: linear-gradient(135deg, var(--primary-color), #2980b9);
+}
+
+.lost-icon {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.found-icon {
+    background: linear-gradient(135deg, var(--secondary-color), #16a085);
+}
+
+.messages-icon {
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+}
+
+.stat-content h3 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.stat-number {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.stat-subtitle {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: block;
+    margin-top: 0.25rem;
+}
+
+/* Detailed Statistics */
+.detailed-stats {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 3rem;
+    box-shadow: var(--shadow-md);
+}
+
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.stats-box h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+}
+
+.stat-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-value.active {
+    color: #f39c12;
+}
+
+.stat-value.success {
+    color: var(--success-color);
+}
+
+/* Recent Items Section */
+.recent-section {
+    margin-bottom: 3rem;
+}
+
+.recent-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.recent-box {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+}
+
+.recent-box h3 {
+    margin-top: 0;
+    color: var(--text-primary);
+    margin-bottom: 1.5rem;
+}
+
+.recent-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.recent-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f9f9f9;
+    border-radius: 8px;
+    align-items: flex-start;
+}
+
+.recent-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: white;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.recent-info {
+    flex: 1;
+}
+
+.recent-title {
+    margin: 0 0 0.3rem 0;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.recent-date {
+    margin: 0 0 0.3rem 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.recent-location {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.recent-status {
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-lost {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-found {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-closed {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.status-claimed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.no-data {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 2rem 1rem;
+    font-style: italic;
+}
+
+/* About Section */
+.about-section {
+    background: linear-gradient(135deg, var(--primary-color), #2980b9);
+    color: white;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.about-section h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+.about-section p {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .reports-header h1 {
+        font-size: 1.8rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+
+    .recent-row {
+        grid-template-columns: 1fr;
+    }
+
+    .recent-item {
+        flex-direction: column;
+    }
+
+    .recent-status {
+        align-self: flex-start;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .print-btn {
+        display: none;
+    }
+
+    .reports-container {
+        max-width: 100%;
+        padding: 0;
+    }
+
+    .stat-card,
+    .detailed-stats,
+    .recent-box {
+        box-shadow: none;
+        border: 1px solid #ddd;
+        page-break-inside: avoid;
+    }
+
+    body {
+        background: white;
+    }
+}
+</style>
+{% endblock %}

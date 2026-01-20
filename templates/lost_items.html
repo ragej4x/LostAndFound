@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Lost Items - Lost and Found System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Lost Items</h1>
+    {% if current_user.is_authenticated %}
+        <a href="{{ url_for('report_lost') }}" class="btn btn-primary">Report Lost Item</a>
+    {% endif %}
+</div>
+
+<form action="{{ url_for('lost_items') }}" method="GET" class="search-form page-search">
+    <div class="search-container">
+        <input type="text" name="search" placeholder="Search lost items..." class="search-input" value="{{ search or '' }}">
+        <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+</form>
+
+{% if items %}
+    <div class="items-grid">
+        {% for item in items %}
+            <div class="item-card">
+                <div class="item-header">
+                    <h3>{{ item.title }}</h3>
+                    <span class="item-status status-lost">Lost</span>
+                </div>
+                <p class="item-description">{{ item.description[:150] }}{% if item.description|length > 150 %}...{% endif %}</p>
+                <div class="item-details">
+                    <p><strong>Location:</strong> {{ item.location }}</p>
+                    <p><strong>Date Lost:</strong> {{ item.date_lost.strftime('%B %d, %Y') }}</p>
+                    <p><strong>Reported by:</strong> {{ item.user.username }}</p>
+                </div>
+                <a href="{{ url_for('lost_item_detail', item_id=item.id) }}" class="btn btn-sm">View Details</a>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state">
+        <p>No lost items found. Be the first to report a lost item!</p>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('report_lost') }}" class="btn btn-primary">Report Lost Item</a>
+        {% endif %}
+    </div>
+{% endif %}
+{% endblock %}
+

@@ -1,0 +1,774 @@
+{% extends "base.html" %}
+
+{% block title %}Conversation with {{ other_user.username }} - Lost and Found System{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+<div class="messenger-container">
+    <!-- Messenger Header -->
+    <div class="messenger-header">
+        <div class="messenger-header-left">
+            <a href="{{ url_for('messages') }}" class="back-btn"><i class="bi bi-arrow-left"></i> Back</a>
+            <div class="conversation-user-info">
+                <h2>{{ other_user.username }}</h2>
+                <p class="user-status">Active now</p>
+            </div>
+        </div>
+        <div class="messenger-header-right">
+            <button class="header-action-btn" title="Search"><i class="bi bi-search"></i></button>
+        </div>
+    </div>
+
+    <!-- Messages Display -->
+    <div class="messages-area" id="messagesDisplay">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="message-group {% if message.sender_id == current_user.id %}sent-group{% else %}received-group{% endif %}">
+                    <div class="message-avatar">
+                        {% if message.sender_id == current_user.id %}
+                            <span class="avatar-initial">{{ current_user.username[0].upper() }}</span>
+                        {% else %}
+                            <span class="avatar-initial">{{ other_user.username[0].upper() }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="message-bubble-wrapper">
+                        {% if message.item_type == 'location' and message.latitude and message.longitude %}
+                            <div class="message-bubble location-bubble">
+                                <div class="message-sender">{{ message.sender.username }}</div>
+                                <div class="location-message">
+                                    <p class="location-address"><i class="bi bi-pin-map"></i> {{ message.address }}</p>
+                                    <div class="location-map-preview" data-lat="{{ message.latitude }}" data-lng="{{ message.longitude }}"></div>
+                                    <a href="https://maps.google.com/?q={{ message.latitude }},{{ message.longitude }}" target="_blank" class="location-link">View in Maps →</a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="message-bubble">
+                                <div class="message-sender">{{ message.sender.username }}</div>
+                                <p class="message-text">{{ message.content }}</p>
+                            </div>
+                        {% endif %}
+                        <span class="message-time">{{ message.created_at.strftime('%I:%M %p') }}</span>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-messages-area">
+                <div class="no-messages-icon">💬</div>
+                <h3>No messages yet</h3>
+                <p>Start a conversation with {{ other_user.username }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Message Input -->
+    <div class="message-input-area">
+        <form method="POST" action="{{ url_for('send_reply', user_id=other_user.id) }}" class="message-form" id="messageForm">
+            <div class="input-group">
+                <button type="button" class="input-action-btn" id="locationBtn" title="Send Location"><i class="bi bi-geo-alt-fill"></i></button>
+                <textarea 
+                    name="content" 
+                    placeholder="Aa" 
+                    class="message-textarea"
+                    id="messageInput"
+                    rows="1"></textarea>
+                <button type="submit" class="send-btn" id="sendBtn"><i class="bi bi-send-fill"></i></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Location Modal -->
+<div class="location-modal" id="locationModal">
+    <div class="location-modal-content">
+        <div class="location-modal-header">
+            <h2>Send Location</h2>
+            <button type="button" class="close-btn" id="closeLocationModal"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="location-address-display" id="locationAddressDisplay">Loading address...</div>
+        <div id="mapContainer" style="height: 400px; width: 100%; margin: 1rem 0;"></div>
+        <div class="location-modal-actions">
+            <button type="button" class="btn btn-secondary" id="cancelLocationBtn">Cancel</button>
+            <button type="button" class="btn btn-primary" id="sendLocationBtn">Send Location</button>
+        </div>
+    </div>
+</div>
+
+<style>
+:root {
+    --messenger-bg: #fff;
+    --message-received-bg: #e5e5ea;
+    --message-sent-bg: var(--primary-color);
+    --text-light: #999;
+}
+
+.messenger-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 70px);
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--messenger-bg);
+    position: relative;
+}
+
+/* Messenger Header */
+.messenger-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--card-bg);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.messenger-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    cursor: pointer;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.back-btn:hover {
+    color: var(--primary-dark);
+}
+
+.conversation-user-info h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.user-status {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.messenger-header-right {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.header-action-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    transition: transform 0.2s;
+}
+
+.header-action-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Messages Area */
+.messages-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: #fff;
+}
+
+.messages-area::-webkit-scrollbar {
+    width: 8px;
+}
+
+.messages-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.messages-area::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.messages-area::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* Message Group */
+.message-group {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-end;
+    animation: messageSlide 0.3s ease;
+}
+
+@keyframes messageSlide {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.message-group.sent-group {
+    justify-content: flex-end;
+}
+
+.message-group.sent-group .message-avatar {
+    order: 2;
+}
+
+.message-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.message-group.sent-group .message-avatar {
+    background: var(--primary-color);
+}
+
+.message-bubble-wrapper {
+    display: flex;
+    flex-direction: column;
+    max-width: 70%;
+}
+
+.message-group.sent-group .message-bubble-wrapper {
+    align-items: flex-end;
+}
+
+.message-bubble {
+    padding: 0.75rem 1rem;
+    border-radius: 18px;
+    word-wrap: break-word;
+    background: var(--message-received-bg);
+    color: var(--text-primary);
+}
+
+.message-group.sent-group .message-bubble {
+    background: var(--message-sent-bg);
+    color: white;
+}
+
+.message-sender {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text-secondary);
+}
+
+.message-group.sent-group .message-sender {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.message-text {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+    padding: 0 1rem;
+}
+
+.message-group.sent-group .message-time {
+    text-align: right;
+}
+
+/* Location Message */
+.location-bubble {
+    padding: 0;
+    overflow: hidden;
+}
+
+.location-message {
+    padding: 0.75rem;
+}
+
+.location-address {
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.location-map-preview {
+    height: 200px;
+    width: 100%;
+    border-radius: 12px;
+    margin: 0.5rem 0;
+}
+
+.location-link {
+    display: inline-block;
+    font-size: 0.85rem;
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 0.5rem;
+    transition: opacity 0.2s;
+}
+
+.location-link:hover {
+    opacity: 0.8;
+}
+
+.message-group.sent-group .location-link {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* No Messages */
+.no-messages-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 1rem;
+    color: var(--text-secondary);
+}
+
+.no-messages-icon {
+    font-size: 3rem;
+}
+
+.no-messages-area h3 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.no-messages-area p {
+    margin: 0;
+}
+
+/* Message Input Area */
+.message-input-area {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--card-bg);
+}
+
+.message-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.input-group {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    width: 100%;
+    background: #f0f0f0;
+    border-radius: 24px;
+    padding: 0.5rem;
+}
+
+.input-action-btn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    transition: transform 0.2s;
+}
+
+.input-action-btn:hover {
+    transform: scale(1.1);
+}
+
+.message-textarea {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 1rem;
+    resize: none;
+    max-height: 100px;
+    color: var(--text-primary);
+    outline: none;
+    padding: 0.5rem 0;
+}
+
+.message-textarea::placeholder {
+    color: var(--text-secondary);
+}
+
+.send-btn {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 0.5rem 0.75rem;
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+}
+
+.send-btn:hover:not(:disabled) {
+    transform: scale(1.15);
+}
+
+.send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Location Modal */
+.location-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.location-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.location-modal-content {
+    background: var(--card-bg);
+    padding: 1.5rem;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-xl);
+}
+
+.location-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.location-modal-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+}
+
+.location-address-display {
+    padding: 1rem;
+    background: #f0f8ff;
+    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
+
+.location-modal-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.modal-btn-cancel {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.modal-btn-cancel:hover {
+    background: var(--text-secondary);
+    color: white;
+}
+
+.modal-btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.modal-btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .messenger-container {
+        height: calc(100vh - 60px);
+    }
+
+    .message-bubble-wrapper {
+        max-width: 85%;
+    }
+
+    .message-textarea {
+        font-size: 0.95rem;
+    }
+
+    .location-modal-content {
+        width: 95%;
+    }
+
+    .location-modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-btn {
+        width: 100%;
+    }
+
+    #mapContainer {
+        height: 300px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .messenger-header {
+        padding: 0.75rem;
+    }
+
+    .conversation-user-info h2 {
+        font-size: 1rem;
+    }
+
+    .messages-area {
+        padding: 0.75rem;
+    }
+
+    .message-group {
+        gap: 0.5rem;
+    }
+
+    .message-avatar {
+        width: 32px;
+        height: 32px;
+        font-size: 0.75rem;
+    }
+
+    .message-bubble-wrapper {
+        max-width: 90%;
+    }
+
+    .message-input-area {
+        padding: 0.75rem;
+    }
+
+    .input-group {
+        padding: 0.25rem;
+    }
+
+    .input-action-btn,
+    .send-btn {
+        padding: 0.35rem 0.5rem;
+        font-size: 1.1rem;
+    }
+
+    .message-textarea {
+        padding: 0.25rem 0;
+    }
+
+    #mapContainer {
+        height: 250px !important;
+    }
+}
+</style>
+
+<script>
+let map = null;
+let mapMarker = null;
+let currentLocation = { lat: 40.7128, lng: -74.0060 }; // Default to New York
+
+const locationBtn = document.getElementById('locationBtn');
+const locationModal = document.getElementById('locationModal');
+const closeLocationModal = document.getElementById('closeLocationModal');
+const cancelLocationBtn = document.getElementById('cancelLocationBtn');
+const sendLocationBtn = document.getElementById('sendLocationBtn');
+const locationAddressDisplay = document.getElementById('locationAddressDisplay');
+const messagesDisplay = document.getElementById('messagesDisplay');
+
+// Open location modal
+locationBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    locationModal.classList.add('active');
+    
+    if (!map) {
+        initMap();
+    }
+    
+    // Get user's current location
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            currentLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            map.setView([currentLocation.lat, currentLocation.lng], 15);
+            updateMapMarker(currentLocation.lat, currentLocation.lng);
+            getAddressFromCoordinates(currentLocation.lat, currentLocation.lng);
+        }, function(error) {
+            console.log('Geolocation error:', error);
+            locationAddressDisplay.textContent = 'Unable to access location. Using default location.';
+        });
+    }
+});
+
+// Close modal
+closeLocationModal.addEventListener('click', closeModal);
+cancelLocationBtn.addEventListener('click', closeModal);
+
+function closeModal() {
+    locationModal.classList.remove('active');
+}
+
+// Initialize map
+function initMap() {
+    if (map) return;
+    
+    map = L.map('mapContainer').setView([currentLocation.lat, currentLocation.lng], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Add click event to map for placing marker
+    map.on('click', function(e) {
+        updateMapMarker(e.latlng.lat, e.latlng.lng);
+        getAddressFromCoordinates(e.latlng.lat, e.latlng.lng);
+    });
+}
+
+// Update map marker
+function updateMapMarker(lat, lng) {
+    currentLocation = { lat: lat, lng: lng };
+    
+    if (mapMarker) {
+        mapMarker.setLatLng([lat, lng]);
+    } else {
+        mapMarker = L.marker([lat, lng], {
+            draggable: true
+        }).addTo(map);
+        
+        mapMarker.on('dragend', function() {
+            const newLat = mapMarker.getLatLng().lat;
+            const newLng = mapMarker.getLatLng().lng;
+            getAddressFromCoordinates(newLat, newLng);
+        });
+    }
+}
+
+// Get address from coordinates using Nominatim API
+function getAddressFromCoordinates(lat, lng) {
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
+        .then(response => response.json())
+        .then(data => {
+            const address = data.address?.road || data.address?.city || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+            locationAddressDisplay.textContent = '<i class="bi bi-pin-map"></i> ' + address;
+            currentLocation = { lat: lat, lng: lng, address: address };
+        })
+        .catch(error => {
+            console.log('Address lookup error:', error);
+            locationAddressDisplay.textContent = `<i class="bi bi-pin-map"></i> Coordinates: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        });
+}
+
+// Send location
+sendLocationBtn.addEventListener('click', function() {
+    fetch('{{ url_for("send_location", user_id=other_user.id) }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            latitude: currentLocation.lat,
+            longitude: currentLocation.lng,
+            address: currentLocation.address || `${currentLocation.lat.toFixed(4)}, ${currentLocation.lng.toFixed(4)}`
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeModal();
+            location.reload();
+        } else {
+            alert('Failed to send location');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to send location');
+    });
+});
+
+// Initialize mini maps for location messages
+function initMiniMaps() {
+    document.querySelectorAll('.location-map-preview').forEach(el => {
+        const lat = parseFloat(el.dataset.lat);
+        const lng = parseFloat(el.dataset.lng);
+        
+        const miniMap = L.map(el).setView([lat, lng], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(miniMap);
+        
+        L.marker([lat, lng]).addTo(miniMap);
+    });
+}
+
+// Initialize mini maps on page load
+window.addEventListener('load', initMiniMaps);
+
+// Close modal when clicking outside
+window.addEventListener('click', function(event) {
+    if (event.target === locationModal) {
+        closeModal();
+    }
+});
+
+// Auto-scroll to bottom of messages
+messagesDisplay.scrollTop = messagesDisplay.scrollHeight;
+</script>
+{% endblock %}

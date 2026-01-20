@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Lost and Found System{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2 class="auth-title">Create Account</h2>
+        <p class="auth-subtitle">Join our community to report lost or found items.</p>
+        
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="terms-section">
+                <h3>Terms and Conditions</h3>
+                <div class="terms-box">
+                    <h4>Liability Disclaimer</h4>
+                    <p><strong>Assumption of Risk:</strong> By using this Lost and Found platform, you acknowledge and agree that:</p>
+                    <ul>
+                        <li>The developers and platform administrators are NOT responsible for any items reported as lost or found that may be damaged, broken, or lost again during transfer or meeting.</li>
+                        <li>Users meet in-person entirely at their own risk. The platform is not liable for any injuries, disputes, or incidents that occur during personal meetings to exchange items.</li>
+                        <li>All communication and meetings are conducted between users at their own discretion and responsibility.</li>
+                        <li>Users should take appropriate safety precautions when meeting strangers from the internet.</li>
+                        <li>The platform does not verify the authenticity or condition of reported items.</li>
+                    </ul>
+                    <h4>User Responsibility</h4>
+                    <ul>
+                        <li>You are responsible for accurately describing items you report.</li>
+                        <li>You agree not to report false or misleading information.</li>
+                        <li>You are responsible for verifying the authenticity of found items before claiming them.</li>
+                        <li>You agree to use the platform responsibly and ethically.</li>
+                    </ul>
+                </div>
+                
+                <div class="terms-agreement">
+                    <input type="checkbox" id="agree_terms" name="agree_terms" required>
+                    <label for="agree_terms" class="terms-label">
+                        I agree to the Terms and Conditions, Liability Disclaimer, and Privacy Policy. 
+                        I understand that the platform is not responsible for damaged items or risks associated with meeting in person.
+                    </label>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">Register</button>
+        </form>
+        
+        <p class="auth-footer">
+            Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+        </p>
+    </div>
+</div>
+
+<style>
+.terms-section {
+    background: #f9f9f9;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.terms-section h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.terms-box {
+    background: white;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+}
+
+.terms-box h4 {
+    margin: 1rem 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.terms-box h4:first-child {
+    margin-top: 0;
+}
+
+.terms-box p {
+    margin: 0.5rem 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.terms-box ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.terms-box li {
+    margin: 0.35rem 0;
+    line-height: 1.4;
+}
+
+.terms-agreement {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.terms-agreement input[type="checkbox"] {
+    margin-top: 0.35rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.terms-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+    .terms-section {
+        max-height: 250px;
+        padding: 1rem;
+    }
+
+    .terms-box {
+        padding: 0.75rem;
+    }
+
+    .terms-section h3 {
+        font-size: 1rem;
+    }
+}
+</style>
+{% endblock %}
+

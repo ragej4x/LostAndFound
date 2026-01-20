@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Report Lost Item - Lost and Found System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Report Lost Item</h1>
+</div>
+
+<div class="form-container">
+    <div class="form-card">
+        <form method="POST" class="item-form" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="title">Item Title *</label>
+                <input type="text" id="title" name="title" placeholder="e.g., Lost iPhone 17 fully paid" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description *</label>
+                <textarea id="description" name="description" rows="5" placeholder="Describe the item in detail (color, brand, model, distinctive features, etc.)" required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="location">Location Where Lost *</label>
+                <input type="text" id="location" name="location" placeholder="e.g., Pascam 1 " required>
+            </div>
+            
+            <div class="form-group">
+                <label for="date_lost">Date Lost *</label>
+                <input type="date" id="date_lost" name="date_lost" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="contact_info">Contact Information *</label>
+                <input type="text" id="contact_info" name="contact_info" placeholder="Email or phone number" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="picture">Attach Picture</label>
+                <input type="file" id="picture" name="picture" accept="image/*">
+                <small style="color: var(--text-secondary); display: block; margin-top: 0.5rem;">Accepted formats: PNG, JPG, JPEG, GIF, WEBP (Max 16MB)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="adviser_name">Adviser Name</label>
+                <input type="text" id="adviser_name" name="adviser_name" placeholder="e.g., Mr. John Daraog">
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Submit Report</button>
+                <a href="{{ url_for('lost_items') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
