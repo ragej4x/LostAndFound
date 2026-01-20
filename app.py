@@ -9,7 +9,7 @@ from difflib import SequenceMatcher
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-this-in-production'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lost_and_found.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://ragejax:p3f10tIgHrWtFOUYKVSpz6Kpf9fcviWS@dpg-d5ndd175r7bs73dmp0f0-a.singapore-postgres.render.com/lostandfound_g9aj'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
